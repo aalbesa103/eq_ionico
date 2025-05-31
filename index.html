@@ -668,7 +668,7 @@
                         legend: {
                            display: false 
                         }
-                        // annotation property is set below based on plugin v1.x requirements
+                        // annotation property is set below 
                     },
                     interaction: { 
                         mode: 'index',
@@ -680,13 +680,13 @@
                     }
                 };
                 
-                // Specific handling for chartjs-plugin-annotation v1.x
+                // Correctly configure annotations for Chart.js v3 with chartjs-plugin-annotation v1.x
                 if (annotationPluginSuccessfullyRegistered && currentChartAnnotationsArray.length > 0) {
-                    chartOptionsConfig.plugins.annotation = { // Standard for Chart.js v3 and plugin v1.x
+                    chartOptionsConfig.plugins.annotation = { 
                         annotations: currentChartAnnotationsArray // Pass the array directly
                     };
                 } else if (!annotationPluginSuccessfullyRegistered && currentChartAnnotationsArray.length > 0) {
-                     console.warn("El plugin de anotaciones no se registró correctamente. Las anotaciones no se mostrarán.");
+                     console.warn("El plugin de anotaciones no se registró correctamente. Las anotaciones (indicadores, puntos de eq.) no se mostrarán en el gráfico.");
                 }
 
 
