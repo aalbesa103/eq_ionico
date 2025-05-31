@@ -1,1 +1,711 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Curva de Titulación Ácido-Base</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script> 
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Tailwind gray-100 */
+        }
+        .input-label {
+            @apply block text-sm font-medium text-gray-700 mb-1;
+        }
+        .input-field {
+            @apply mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm;
+        }
+        .btn {
+            @apply inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2;
+        }
+        .btn-primary {
+            @apply bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500;
+        }
+        .card {
+            @apply bg-white shadow-lg rounded-lg p-6;
+        }
+        .error-message {
+            @apply text-red-500 text-sm mt-1;
+        }
+        table {
+            @apply min-w-full divide-y divide-gray-200 mt-4;
+        }
+        thead {
+            @apply bg-gray-50;
+        }
+        th {
+            @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+        }
+        tbody {
+            @apply bg-white divide-y divide-gray-200;
+        }
+        td {
+            @apply px-6 py-4 whitespace-nowrap text-sm text-gray-700;
+        }
+        .chart-container {
+            position: relative;
+            height: 450px; 
+            width: 100%;
+        }
+        .indicator-checkbox-label {
+            @apply ml-2 text-sm text-gray-700;
+        }
+        .indicator-checkbox {
+            @apply h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="container mx-auto max-w-6xl">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-indigo-700">Simulador de Curva de Titulación Ácido-Base</h1>
+            <p class="text-gray-600 mt-2">Visualiza cómo cambia el pH durante una titulación, incluyendo rangos de indicadores.</p>
+        </header>
 
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="card lg:col-span-1">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Parámetros</h2>
+                
+                <div class="mb-4 p-4 border border-gray-200 rounded-md">
+                    <h3 class="text-lg font-medium text-indigo-600 mb-2">Ácido</h3>
+                    <div>
+                        <label for="acidVolume" class="input-label">Volumen Inicial (mL):</label>
+                        <input type="number" id="acidVolume" class="input-field" value="25">
+                        <p id="errorAcidVolume" class="error-message"></p>
+                    </div>
+                    <div class="mt-3">
+                        <label for="acidConcentration" class="input-label">Concentración (M):</label>
+                        <input type="number" id="acidConcentration" class="input-field" step="0.0001" value="0.1">
+                        <p id="errorAcidConcentration" class="error-message"></p>
+                    </div>
+                    <div class="mt-3">
+                        <label for="acidType" class="input-label">Tipo:</label>
+                        <select id="acidType" class="input-field">
+                            <option value="strong">Fuerte</option>
+                            <option value="weak">Débil</option>
+                        </select>
+                    </div>
+                    <div id="kaSection" class="mt-3 hidden">
+                        <label for="acidKa" class="input-label">Ka:</label>
+                        <input type="text" id="acidKa" class="input-field" placeholder="Ej: 1.8e-5" value="1.8e-5">
+                         <p id="errorAcidKa" class="error-message"></p>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 border border-gray-200 rounded-md">
+                    <h3 class="text-lg font-medium text-indigo-600 mb-2">Base Titulante (Fuerte)</h3>
+                    <div>
+                        <label for="baseConcentration" class="input-label">Concentración (M):</label>
+                        <input type="number" id="baseConcentration" class="input-field" step="0.0001" value="0.1">
+                        <p id="errorBaseConcentration" class="error-message"></p>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 border border-gray-200 rounded-md">
+                    <h3 class="text-lg font-medium text-indigo-600 mb-2">Indicadores</h3>
+                    <div id="indicatorSelectionContainer" class="space-y-1 max-h-40 overflow-y-auto mt-2 border p-2 rounded-md">
+                        {/* Checkboxes de indicadores se poblarán aquí */}
+                    </div>
+                </div>
+
+                <div class="p-4 border border-gray-200 rounded-md">
+                    <h3 class="text-lg font-medium text-indigo-600 mb-2">Simulación</h3>
+                    <div>
+                        <label for="titrantStartVolume" class="input-label">Vol. Inicial Titulante (mL):</label>
+                        <input type="number" id="titrantStartVolume" class="input-field" value="0">
+                        <p id="errorTitrantStartVolume" class="error-message"></p>
+                    </div>
+                    <div class="mt-3">
+                        <label for="titrantEndVolume" class="input-label">Vol. Final Titulante (mL):</label>
+                        <input type="number" id="titrantEndVolume" class="input-field" value="50">
+                        <p id="errorTitrantEndVolume" class="error-message"></p>
+                    </div>
+                    <div class="mt-3">
+                        <label for="titrantIncrement" class="input-label">Incremento (mL):</label>
+                        <input type="number" id="titrantIncrement" class="input-field" step="0.1" value="1">
+                        <p id="errorTitrantIncrement" class="error-message"></p>
+                    </div>
+                     <div class="mt-3">
+                        <label for="addEquivalencePoint" class="input-label flex items-center">
+                            <input type="checkbox" id="addEquivalencePoint" class="indicator-checkbox" checked>
+                            <span class="indicator-checkbox-label">Añadir punto de equivalencia</span>
+                        </label>
+                    </div>
+                    <div id="halfEquivalencePointSection" class="mt-3 hidden">
+                         <label for="addHalfEquivalencePoint" class="input-label flex items-center">
+                            <input type="checkbox" id="addHalfEquivalencePoint" class="indicator-checkbox" checked>
+                            <span class="indicator-checkbox-label">Añadir punto de semi-equivalencia</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button id="simulateBtn" class="btn btn-primary w-full mt-6">Simular y Graficar</button>
+            </div>
+            
+            <div class="card lg:col-span-2">
+                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Resultados</h2>
+                <div class="chart-container mb-6">
+                    <canvas id="titrationChart"></canvas>
+                </div>
+                <div id="equivalencePointInfo" class="mt-4 mb-2 text-sm text-gray-700 font-medium"></div>
+                <div id="resultsTableContainer" class="overflow-x-auto max-h-96 overflow-y-auto"> 
+                    {/* La tabla se generará aquí */}
+                </div>
+            </div>
+        </div>
+        
+        <footer class="text-center mt-12 py-4 border-t border-gray-300">
+            <p class="text-gray-600 text-sm">&copy; 2024-2025 Simulador de Titulación. Creado con fines educativos.</p>
+        </footer>
+    </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const KW = 1.0e-14; 
+
+            const INDICATORS = [
+                { id: "timolBlue1", name: "Azul de Timol (1° viraje)", lowpH: 1.2, highpH: 2.8, color: 'rgba(255, 0, 0, 0.15)', borderColor: 'rgba(255, 0, 0, 0.4)' }, 
+                { id: "bromophenolBlue", name: "Azul de Bromofenol", lowpH: 3.0, highpH: 4.6, color: 'rgba(153, 50, 204, 0.15)', borderColor: 'rgba(153, 50, 204, 0.4)' }, 
+                { id: "methylOrange", name: "Naranja de Metilo", lowpH: 3.1, highpH: 4.4, color: 'rgba(255, 140, 0, 0.15)', borderColor: 'rgba(255, 140, 0, 0.4)' }, 
+                { id: "methylRed", name: "Rojo de Metilo", lowpH: 4.4, highpH: 6.2, color: 'rgba(220, 20, 60, 0.15)', borderColor: 'rgba(220, 20, 60, 0.4)' }, 
+                { id: "litmus", name: "Tornasol", lowpH: 5.0, highpH: 8.0, color: 'rgba(100, 149, 237, 0.15)', borderColor: 'rgba(100, 149, 237, 0.4)' }, 
+                { id: "bromothymolBlue", name: "Azul de Bromotimol", lowpH: 6.0, highpH: 7.6, color: 'rgba(50, 205, 50, 0.15)', borderColor: 'rgba(50, 205, 50, 0.4)' }, 
+                { id: "timolBlue2", name: "Azul de Timol (2° viraje)", lowpH: 8.0, highpH: 9.6, color: 'rgba(0, 0, 205, 0.15)', borderColor: 'rgba(0, 0, 205, 0.4)' }, 
+                { id: "phenolphthalein", name: "Fenolftaleína", lowpH: 8.2, highpH: 10.0, color: 'rgba(255, 105, 180, 0.15)', borderColor: 'rgba(255, 105, 180, 0.4)' }, 
+                { id: "alizarinYellowR", name: "Amarillo de Alizarina R", lowpH: 10.1, highpH: 12.0, color: 'rgba(255, 215, 0, 0.15)', borderColor: 'rgba(255, 215, 0, 0.4)' } 
+            ];
+
+            let annotationPluginAttempted = false;
+            let annotationPluginSuccessfullyRegistered = false;
+
+            const acidVolumeEl = document.getElementById('acidVolume');
+            const acidConcentrationEl = document.getElementById('acidConcentration');
+            const acidTypeEl = document.getElementById('acidType');
+            const acidKaEl = document.getElementById('acidKa');
+            const kaSectionEl = document.getElementById('kaSection');
+            const baseConcentrationEl = document.getElementById('baseConcentration');
+            const titrantStartVolumeEl = document.getElementById('titrantStartVolume');
+            const titrantEndVolumeEl = document.getElementById('titrantEndVolume');
+            const titrantIncrementEl = document.getElementById('titrantIncrement');
+            const addEquivalencePointEl = document.getElementById('addEquivalencePoint');
+            const addHalfEquivalencePointEl = document.getElementById('addHalfEquivalencePoint');
+            const halfEquivalencePointSectionEl = document.getElementById('halfEquivalencePointSection');
+            const indicatorSelectionContainerEl = document.getElementById('indicatorSelectionContainer');
+
+            const simulateBtn = document.getElementById('simulateBtn');
+            const resultsTableContainer = document.getElementById('resultsTableContainer');
+            const equivalencePointInfoEl = document.getElementById('equivalencePointInfo');
+            const chartCanvas = document.getElementById('titrationChart');
+            let titrationChart = null;
+
+            function populateIndicatorSelection() {
+                indicatorSelectionContainerEl.innerHTML = ''; 
+                INDICATORS.forEach(indicator => {
+                    const div = document.createElement('div');
+                    div.classList.add('flex', 'items-center');
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `indicator-${indicator.id}`;
+                    checkbox.value = indicator.id;
+                    checkbox.classList.add('indicator-checkbox');
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = `indicator-${indicator.id}`;
+                    label.textContent = `${indicator.name} (pH ${indicator.lowpH} - ${indicator.highpH})`;
+                    label.classList.add('indicator-checkbox-label');
+
+                    div.appendChild(checkbox);
+                    div.appendChild(label);
+                    indicatorSelectionContainerEl.appendChild(div);
+                });
+            }
+            populateIndicatorSelection();
+
+
+            acidTypeEl.addEventListener('change', function() {
+                kaSectionEl.classList.toggle('hidden', this.value !== 'weak');
+                halfEquivalencePointSectionEl.classList.toggle('hidden', this.value !== 'weak');
+            });
+
+            function validateNumberInput(element, errorElementId, allowZero = false, allowNegative = false) {
+                const value = parseFloat(element.value);
+                const errorEl = document.getElementById(errorElementId);
+                errorEl.textContent = ''; 
+
+                if (isNaN(value)) {
+                    errorEl.textContent = 'Debe ser un número.';
+                    return false;
+                }
+                if (!allowZero && value <= 0) {
+                    errorEl.textContent = 'Debe ser mayor que cero.';
+                    return false;
+                }
+                if (!allowNegative && value < 0) {
+                    errorEl.textContent = 'No puede ser negativo.';
+                    return false;
+                }
+                return true;
+            }
+            
+            function validateKaInput(element, errorElementId) {
+                const valueStr = element.value.toLowerCase();
+                const errorEl = document.getElementById(errorElementId);
+                errorEl.textContent = '';
+
+                if (!valueStr && acidTypeEl.value === 'weak') { 
+                    errorEl.textContent = 'Ka es requerido para ácido débil.';
+                    return false;
+                }
+                if (valueStr) { 
+                    const value = parseFloat(valueStr);
+                     if (isNaN(value) || value <= 0) {
+                        errorEl.textContent = 'Ka debe ser un número positivo mayor que cero.';
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            simulateBtn.addEventListener('click', () => {
+                let isValid = true;
+                isValid &= validateNumberInput(acidVolumeEl, 'errorAcidVolume');
+                isValid &= validateNumberInput(acidConcentrationEl, 'errorAcidConcentration');
+                isValid &= validateNumberInput(baseConcentrationEl, 'errorBaseConcentration');
+                isValid &= validateNumberInput(titrantStartVolumeEl, 'errorTitrantStartVolume', true, false); 
+                isValid &= validateNumberInput(titrantEndVolumeEl, 'errorTitrantEndVolume');
+                isValid &= validateNumberInput(titrantIncrementEl, 'errorTitrantIncrement');
+
+                if (acidTypeEl.value === 'weak') {
+                    isValid &= validateKaInput(acidKaEl, 'errorAcidKa');
+                }
+                
+                const titrantStart = parseFloat(titrantStartVolumeEl.value);
+                const titrantEnd = parseFloat(titrantEndVolumeEl.value);
+                const titrantIncrement = parseFloat(titrantIncrementEl.value);
+
+                if (!isNaN(titrantStart) && !isNaN(titrantEnd) && titrantStart > titrantEnd) {
+                    document.getElementById('errorTitrantEndVolume').textContent = 'El volumen final debe ser mayor o igual al inicial.';
+                    isValid = false;
+                }
+                if (!isNaN(titrantIncrement) && titrantIncrement <=0) {
+                     document.getElementById('errorTitrantIncrement').textContent = 'El incremento debe ser mayor a cero.';
+                    isValid = false;
+                }
+
+                if (!isValid) {
+                    resultsTableContainer.innerHTML = '<p class="text-red-500">Por favor, corrige los errores en los campos de entrada.</p>';
+                    if (titrationChart) titrationChart.destroy();
+                    equivalencePointInfoEl.textContent = '';
+                    return;
+                }
+                
+                const Va = parseFloat(acidVolumeEl.value); 
+                const Ca = parseFloat(acidConcentrationEl.value); 
+                const acidType = acidTypeEl.value;
+                const Ka = acidType === 'weak' ? parseFloat(acidKaEl.value) : null;
+                const Cb = parseFloat(baseConcentrationEl.value); 
+                
+                let VbStart = parseFloat(titrantStartVolumeEl.value);
+                let VbEnd = parseFloat(titrantEndVolumeEl.value);
+                let VbIncrement = parseFloat(titrantIncrementEl.value);
+
+                const titrationData = [];
+                const Veq = (Ca * Va) / Cb;
+                let VhalfEq = null;
+                if (acidType === 'weak' && Ka !== null && !isNaN(Ka) && Ka > 0) { 
+                    VhalfEq = Veq / 2;
+                }
+
+                let titrantVolumes = [];
+                if (VbStart === VbEnd) { 
+                    titrantVolumes.push(VbStart);
+                } else {
+                    for (let v = VbStart; v <= VbEnd; v += VbIncrement) {
+                        titrantVolumes.push(v);
+                    }
+                    if (titrantVolumes.length === 0 || (titrantVolumes[titrantVolumes.length - 1] < VbEnd && !titrantVolumes.includes(VbEnd))) {
+                         titrantVolumes.push(VbEnd);
+                    }
+                }
+
+                if (addEquivalencePointEl.checked && Veq !== null && !isNaN(Veq) && Veq >= VbStart && Veq <= VbEnd) {
+                    if (!titrantVolumes.includes(Veq)) titrantVolumes.push(Veq);
+                }
+                if (acidType === 'weak' && Ka !== null && !isNaN(Ka) && Ka > 0 && addHalfEquivalencePointEl.checked && VhalfEq !== null && VhalfEq >= VbStart && VhalfEq <= VbEnd) {
+                     if (!titrantVolumes.includes(VhalfEq)) titrantVolumes.push(VhalfEq);
+                }
+                
+                titrantVolumes = [...new Set(titrantVolumes)].sort((a, b) => a - b);
+
+                titrantVolumes.forEach(Vb => {
+                    let pH;
+                    const initialMolesAcid = Ca * (Va / 1000); 
+                    const molesBaseAdded = Cb * (Vb / 1000); 
+                    const totalVolumeL = (Va + Vb) / 1000; 
+
+                    if (acidType === 'strong') {
+                        if (Vb < 1e-9 && Ca > 0) { 
+                            pH = -Math.log10(Ca);
+                        } else if (Veq !== null && !isNaN(Veq) && Math.abs(Vb - Veq) < 1e-9 * (Veq || 1) ) { 
+                            pH = 7.0; 
+                        } else if (molesBaseAdded < initialMolesAcid) { 
+                            const molesHPlusRemaining = initialMolesAcid - molesBaseAdded;
+                            const concHPlus = molesHPlusRemaining / totalVolumeL;
+                            pH = concHPlus > 1e-14 ? -Math.log10(concHPlus) : 14.0; 
+                        } else { 
+                            const molesOHMinusExcess = molesBaseAdded - initialMolesAcid;
+                            const concOHMinus = molesOHMinusExcess / totalVolumeL;
+                            const pOH = concOHMinus > 1e-14 ? -Math.log10(concOHMinus) : 14.0;
+                            pH = 14.0 - pOH;
+                        }
+                    } else { 
+                        if (Ka === null || isNaN(Ka) || Ka <= 0) { 
+                            pH = NaN;
+                        } else {
+                            const pKa = -Math.log10(Ka);
+                            if (Vb < 1e-9 && Ca > 0) { 
+                                if (Ca / Ka > 400 ) { 
+                                   const concHPlus = Math.sqrt(Ka * Ca);
+                                   pH = concHPlus > 1e-14 ? -Math.log10(concHPlus) : 14.0;
+                                } else { 
+                                    const a = 1;
+                                    const b = Ka;
+                                    const c = -Ka * Ca;
+                                    const discriminant = b*b - 4*a*c;
+                                    if (discriminant >= 0) {
+                                        const concHPlus = (-b + Math.sqrt(discriminant)) / (2*a);
+                                        pH = concHPlus > 1e-14 ? -Math.log10(concHPlus) : 14.0;
+                                    } else {
+                                        pH = NaN; 
+                                    }
+                                } 
+                            } else if (Veq !== null && !isNaN(Veq) && Math.abs(Vb - Veq) < 1e-9 * (Veq || 1)) { 
+                                const concAminus = initialMolesAcid / totalVolumeL; 
+                                const Kb = KW / Ka;
+                                if (concAminus / Kb > 400 && Kb > 0) {
+                                   const concOHMinus = Math.sqrt(Kb * concAminus);
+                                   const pOH = concOHMinus > 1e-14 ? -Math.log10(concOHMinus) : 14.0;
+                                   pH = 14.0 - pOH;
+                                } else if (Kb > 0) { 
+                                   const a_hydro = 1;
+                                   const b_hydro = Kb;
+                                   const c_hydro = -Kb * concAminus;
+                                   const disc_hydro = b_hydro*b_hydro - 4*a_hydro*c_hydro;
+                                   if (disc_hydro >=0) {
+                                       const concOHMinus = (-b_hydro + Math.sqrt(disc_hydro)) / (2*a_hydro);
+                                       const pOH = concOHMinus > 1e-14 ? -Math.log10(concOHMinus) : 14.0;
+                                       pH = 14.0 - pOH;
+                                   } else {
+                                       pH = NaN;
+                                   }
+                                } else { pH = NaN; }
+                            } else if (molesBaseAdded < initialMolesAcid) { 
+                                const molesAminusFormed = molesBaseAdded;
+                                const molesHARemaining = initialMolesAcid - molesBaseAdded;
+                                if (molesHARemaining > 1e-12 && molesAminusFormed > 1e-12) { 
+                                   pH = pKa + Math.log10(molesAminusFormed / molesHARemaining);
+                                } else if (molesAminusFormed > 1e-12 && molesHARemaining <= 1e-12) { 
+                                     pH = pKa + 7; 
+                                } else if (molesHARemaining > 1e-12 && molesAminusFormed <= 1e-12) { 
+                                     pH = pKa - 7; 
+                                } else { 
+                                     pH = pKa; 
+                                }
+                            } else { 
+                                const molesOHMinusExcess = molesBaseAdded - initialMolesAcid;
+                                const concOHMinus = molesOHMinusExcess / totalVolumeL;
+                                const pOH = concOHMinus > 1e-14 ? -Math.log10(concOHMinus) : 14.0;
+                                pH = 14.0 - pOH;
+                            }
+                        }
+                    }
+
+                    if (Ka !== null && (isNaN(Ka) || Ka <= 0) && acidType === 'weak') {
+                        titrationData.push({ Vb: Vb.toFixed(2), pH: "Error Ka" });
+                    } else if (!isNaN(pH) && isFinite(pH)) {
+                        titrationData.push({ Vb: Vb.toFixed(2), pH: Math.max(0, Math.min(14, parseFloat(pH.toFixed(2)))) });
+                    } else {
+                         titrationData.push({ Vb: Vb.toFixed(2), pH: "Error Calc." });
+                    }
+                });
+
+                displayResults(titrationData, Veq, VhalfEq, acidType, Ka && !isNaN(Ka) && Ka > 0 ? -Math.log10(Ka) : null);
+                plotChart(titrationData, Veq, VhalfEq, acidType, Ka && !isNaN(Ka) && Ka > 0 ? -Math.log10(Ka) : null);
+            });
+
+            function displayResults(data, Veq, VhalfEq, acidType, pKa) {
+                let tableHTML = `
+                    <table class="min-w-full divide-y divide-gray-200 mt-4 rounded-lg shadow">
+                        <thead class="bg-indigo-500 text-white">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">Volumen Base (mL)</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">pH</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">Observación</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">`;
+                
+                data.forEach(point => {
+                    let observation = "";
+                    const VbPoint = parseFloat(point.Vb);
+                    if (Veq !== null && !isNaN(Veq) && Math.abs(VbPoint - Veq) < 1e-9 * (Veq || 1)) { 
+                        observation = "Punto de Equivalencia";
+                    } else if (acidType === 'weak' && VhalfEq !== null && !isNaN(VhalfEq) && pKa !== null && !isNaN(pKa) && Math.abs(VbPoint - VhalfEq) < 1e-9 * (VhalfEq || 1)) {
+                        observation = `Punto de Semi-Equivalencia (pH ≈ pKa = ${pKa.toFixed(2)})`;
+                    }
+
+                    tableHTML += `
+                        <tr class="${observation ? 'bg-indigo-50 hover:bg-indigo-100' : 'hover:bg-gray-50'}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${point.Vb}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${point.pH}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-indigo-700 font-medium">${observation}</td>
+                        </tr>`;
+                });
+                tableHTML += `</tbody></table>`;
+                resultsTableContainer.innerHTML = tableHTML;
+
+                let infoText = Veq !== null && !isNaN(Veq) ? `Punto de Equivalencia Teórico: ${Veq.toFixed(2)} mL.` : "Punto de Equivalencia no calculable.";
+                if (acidType === 'weak' && VhalfEq !== null && !isNaN(VhalfEq) && pKa !== null && !isNaN(pKa)) {
+                    infoText += ` Punto de Semi-Equivalencia Teórico: ${VhalfEq.toFixed(2)} mL (pH ≈ ${pKa.toFixed(2)}).`;
+                }
+                equivalencePointInfoEl.innerHTML = infoText; 
+            }
+
+            function plotChart(data, Veq, VhalfEq, acidType, pKa) {
+                if (!annotationPluginAttempted) {
+                    annotationPluginAttempted = true; 
+                    if (typeof Chart !== 'undefined' && typeof ChartAnnotation !== 'undefined') { 
+                        try {
+                            Chart.register(ChartAnnotation); 
+                            annotationPluginSuccessfullyRegistered = true;
+                            console.log("ChartAnnotation plugin registered successfully.");
+                        } catch (e) {
+                            console.error("Error al registrar el plugin ChartAnnotation:", e);
+                            annotationPluginSuccessfullyRegistered = false;
+                        }
+                    } else {
+                        console.warn('Chart.js o el plugin ChartAnnotation no están disponibles. Las anotaciones podrían no funcionar.');
+                        if (typeof Chart === 'undefined') {
+                            console.error('Error Crítico: Chart.js (Chart) no está cargado.');
+                        }
+                        if (typeof ChartAnnotation === 'undefined') { 
+                            console.error('Error Crítico: El plugin ChartAnnotation (variable global "ChartAnnotation") no está cargado o no se encuentra.');
+                        }
+                        annotationPluginSuccessfullyRegistered = false;
+                    }
+                }
+
+                if (titrationChart) {
+                    titrationChart.destroy();
+                }
+
+                const validData = data.filter(p => p.pH !== "Error Calc." && p.pH !== "Error Ka" && !isNaN(parseFloat(p.pH)) && isFinite(parseFloat(p.pH)));
+                const labels = validData.map(p => parseFloat(p.Vb));
+                const phValues = validData.map(p => parseFloat(p.pH));
+
+                const datasets = [{
+                    label: 'pH',
+                    data: phValues,
+                    borderColor: 'rgb(79, 70, 229)', 
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    tension: 0.2, 
+                    fill: false,
+                    borderWidth: 2, 
+                    pointRadius: 3, 
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: 'rgb(79, 70, 229)'
+                }];
+                
+                const currentChartAnnotationsArray = []; 
+
+                if (addEquivalencePointEl.checked && Veq !== null && !isNaN(Veq) && labels.length > 0 && Veq >= Math.min(...labels) && Veq <= Math.max(...labels)) {
+                    currentChartAnnotationsArray.push({
+                        type: 'line',
+                        scaleID: 'x', 
+                        value: Veq,   
+                        borderColor: 'rgb(220, 38, 38, 0.7)', 
+                        borderWidth: 2,
+                        borderDash: [6, 6],
+                        label: {
+                            content: `Eq. (${Veq.toFixed(1)} mL)`,
+                            enabled: true, 
+                            position: 'top', 
+                            backgroundColor: 'rgba(220, 38, 38, 0.8)',
+                            font: { style: 'bold', size:10, color: 'white' }, 
+                            xAdjust: 0,
+                            yAdjust: -5 
+                        }
+                    });
+                }
+                 if (acidType === 'weak' && addHalfEquivalencePointEl.checked && VhalfEq !== null && !isNaN(VhalfEq) && pKa !== null && !isNaN(pKa) && labels.length > 0 && VhalfEq >= Math.min(...labels) && VhalfEq <= Math.max(...labels)) {
+                    currentChartAnnotationsArray.push({
+                        type: 'line',
+                        scaleID: 'x',
+                        value: VhalfEq,
+                        borderColor: 'rgb(22, 163, 74, 0.7)', 
+                        borderWidth: 2,
+                        borderDash: [6, 6],
+                        label: {
+                            content: `Semi-Eq. (pH ≈ ${pKa.toFixed(1)})`,
+                            enabled: true,
+                            position: 'top',
+                            backgroundColor: 'rgba(22, 163, 74, 0.8)',
+                            font: { style: 'bold', size:10, color: 'white' },
+                            xAdjust: 0,
+                            yAdjust: 5,
+                        }
+                    });
+                     const pHatHalfEqPoint = validData.find(p => Math.abs(parseFloat(p.Vb) - VhalfEq) < 0.001);
+                     const pHatHalfEq = pHatHalfEqPoint ? parseFloat(pHatHalfEqPoint.pH) : pKa;
+                     
+                     if (pHatHalfEq !== null && !isNaN(pHatHalfEq)){
+                         currentChartAnnotationsArray.push({
+                            type: 'line',
+                            scaleID: 'y', 
+                            value: pHatHalfEq,
+                            borderColor: 'rgb(22, 163, 74, 0.5)',
+                            borderWidth: 1,
+                            borderDash: [3, 3],
+                         });
+                     }
+                }
+
+                const selectedIndicatorCheckboxes = document.querySelectorAll('#indicatorSelectionContainer input[type="checkbox"]:checked');
+                selectedIndicatorCheckboxes.forEach(checkbox => {
+                    const indicator = INDICATORS.find(ind => ind.id === checkbox.value);
+                    if (indicator) {
+                        currentChartAnnotationsArray.push({
+                            type: 'box',
+                            yScaleID: 'y', 
+                            yMin: indicator.lowpH,
+                            yMax: indicator.highpH,
+                            backgroundColor: indicator.color,
+                            borderColor: indicator.borderColor,
+                            borderWidth: 1,
+                            label: {
+                                content: `${indicator.name}`, 
+                                enabled: true,
+                                position: 'center', 
+                                font: {style:'bold', size:9, color: indicator.borderColor},
+                                xPadding: 6, 
+                                yPadding: 6,
+                                backgroundColor: 'rgba(255,255,255,0.0)', 
+                            }
+                        });
+                    }
+                });
+                
+                const chartOptionsConfig = { 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { 
+                            type: 'linear', 
+                            title: {
+                                display: true,
+                                text: 'Volumen de Base Añadida (mL)',
+                                font: { size: 14, weight: 'bold' }, 
+                                color: '#374151' 
+                            },
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: 12,
+                                color: '#4b5563' 
+                            },
+                            grid: {
+                                color: '#e5e7eb' 
+                            }
+                        },
+                        y: { 
+                            title: {
+                                display: true,
+                                text: 'pH',
+                                font: { size: 14, weight: 'bold' },
+                                color: '#374151'
+                            },
+                            min: 0,
+                            max: 14,
+                            ticks: {
+                                stepSize: 1,
+                                color: '#4b5563'
+                            },
+                             grid: {
+                                color: '#e5e7eb' 
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Curva de Titulación',
+                            font: { size: 18, weight: 'bold' },
+                            color: '#1f2937', 
+                            padding: { top: 10, bottom: 20 }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.75)',
+                            titleFont: { size: 14, weight: 'bold'}, 
+                            bodyFont: { size: 12 }, 
+                            padding: 10,
+                            cornerRadius: 4,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += `pH ${context.parsed.y.toFixed(2)} a ${context.parsed.x.toFixed(2)} mL`;
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        legend: {
+                           display: false 
+                        }
+                        // annotation property is set below based on plugin v1.x requirements
+                    },
+                    interaction: { 
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    hover: {
+                        mode: 'nearest',
+                        intersect: true
+                    }
+                };
+                
+                // Specific handling for chartjs-plugin-annotation v1.x
+                if (annotationPluginSuccessfullyRegistered && currentChartAnnotationsArray.length > 0) {
+                    chartOptionsConfig.plugins.annotation = { // Standard for Chart.js v3 and plugin v1.x
+                        annotations: currentChartAnnotationsArray // Pass the array directly
+                    };
+                } else if (!annotationPluginSuccessfullyRegistered && currentChartAnnotationsArray.length > 0) {
+                     console.warn("El plugin de anotaciones no se registró correctamente. Las anotaciones no se mostrarán.");
+                }
+
+
+                titrationChart = new Chart(chartCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: labels, 
+                        datasets: datasets
+                    },
+                    options: chartOptionsConfig
+                });
+            }
+            
+            if (acidTypeEl.value === 'strong') {
+                halfEquivalencePointSectionEl.classList.add('hidden');
+            } else {
+                halfEquivalencePointSectionEl.classList.remove('hidden');
+            }
+        }); 
+    </script>
+</body>
+</html>
