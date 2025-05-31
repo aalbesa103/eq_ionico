@@ -6,7 +6,6 @@
     <title>Simulador de Curva de Titulación Ácido-Base</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script> 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -57,6 +56,7 @@
         .indicator-checkbox {
             @apply h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500;
         }
+        /* No se usa .indicator-info ya que los indicadores se dibujarán en el gráfico */
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -106,7 +106,7 @@
                 </div>
 
                 <div class="mb-4 p-4 border border-gray-200 rounded-md">
-                    <h3 class="text-lg font-medium text-indigo-600 mb-2">Indicadores</h3>
+                    <h3 class="text-lg font-medium text-indigo-600 mb-2">Indicadores a Visualizar</h3>
                     <div id="indicatorSelectionContainer" class="space-y-1 max-h-40 overflow-y-auto mt-2 border p-2 rounded-md">
                         {/* Checkboxes de indicadores se poblarán aquí */}
                     </div>
@@ -132,13 +132,13 @@
                      <div class="mt-3">
                         <label for="addEquivalencePoint" class="input-label flex items-center">
                             <input type="checkbox" id="addEquivalencePoint" class="indicator-checkbox" checked>
-                            <span class="indicator-checkbox-label">Añadir punto de equivalencia</span>
+                            <span class="indicator-checkbox-label">Marcar punto de equivalencia</span>
                         </label>
                     </div>
                     <div id="halfEquivalencePointSection" class="mt-3 hidden">
                          <label for="addHalfEquivalencePoint" class="input-label flex items-center">
                             <input type="checkbox" id="addHalfEquivalencePoint" class="indicator-checkbox" checked>
-                            <span class="indicator-checkbox-label">Añadir punto de semi-equivalencia</span>
+                            <span class="indicator-checkbox-label">Marcar punto de semi-equivalencia</span>
                         </label>
                     </div>
                 </div>
@@ -168,19 +168,16 @@
             const KW = 1.0e-14; 
 
             const INDICATORS = [
-                { id: "timolBlue1", name: "Azul de Timol (1° viraje)", lowpH: 1.2, highpH: 2.8, color: 'rgba(255, 0, 0, 0.15)', borderColor: 'rgba(255, 0, 0, 0.4)' }, 
-                { id: "bromophenolBlue", name: "Azul de Bromofenol", lowpH: 3.0, highpH: 4.6, color: 'rgba(153, 50, 204, 0.15)', borderColor: 'rgba(153, 50, 204, 0.4)' }, 
-                { id: "methylOrange", name: "Naranja de Metilo", lowpH: 3.1, highpH: 4.4, color: 'rgba(255, 140, 0, 0.15)', borderColor: 'rgba(255, 140, 0, 0.4)' }, 
-                { id: "methylRed", name: "Rojo de Metilo", lowpH: 4.4, highpH: 6.2, color: 'rgba(220, 20, 60, 0.15)', borderColor: 'rgba(220, 20, 60, 0.4)' }, 
-                { id: "litmus", name: "Tornasol", lowpH: 5.0, highpH: 8.0, color: 'rgba(100, 149, 237, 0.15)', borderColor: 'rgba(100, 149, 237, 0.4)' }, 
-                { id: "bromothymolBlue", name: "Azul de Bromotimol", lowpH: 6.0, highpH: 7.6, color: 'rgba(50, 205, 50, 0.15)', borderColor: 'rgba(50, 205, 50, 0.4)' }, 
-                { id: "timolBlue2", name: "Azul de Timol (2° viraje)", lowpH: 8.0, highpH: 9.6, color: 'rgba(0, 0, 205, 0.15)', borderColor: 'rgba(0, 0, 205, 0.4)' }, 
-                { id: "phenolphthalein", name: "Fenolftaleína", lowpH: 8.2, highpH: 10.0, color: 'rgba(255, 105, 180, 0.15)', borderColor: 'rgba(255, 105, 180, 0.4)' }, 
-                { id: "alizarinYellowR", name: "Amarillo de Alizarina R", lowpH: 10.1, highpH: 12.0, color: 'rgba(255, 215, 0, 0.15)', borderColor: 'rgba(255, 215, 0, 0.4)' } 
+                { id: "timolBlue1", name: "Azul de Timol (1° viraje)", lowpH: 1.2, highpH: 2.8, color: 'rgba(255, 0, 0, 0.1)', borderColor: 'rgba(255, 0, 0, 0.3)' }, 
+                { id: "bromophenolBlue", name: "Azul de Bromofenol", lowpH: 3.0, highpH: 4.6, color: 'rgba(153, 50, 204, 0.1)', borderColor: 'rgba(153, 50, 204, 0.3)' }, 
+                { id: "methylOrange", name: "Naranja de Metilo", lowpH: 3.1, highpH: 4.4, color: 'rgba(255, 140, 0, 0.1)', borderColor: 'rgba(255, 140, 0, 0.3)' }, 
+                { id: "methylRed", name: "Rojo de Metilo", lowpH: 4.4, highpH: 6.2, color: 'rgba(220, 20, 60, 0.1)', borderColor: 'rgba(220, 20, 60, 0.3)' }, 
+                { id: "litmus", name: "Tornasol", lowpH: 5.0, highpH: 8.0, color: 'rgba(100, 149, 237, 0.1)', borderColor: 'rgba(100, 149, 237, 0.3)' }, 
+                { id: "bromothymolBlue", name: "Azul de Bromotimol", lowpH: 6.0, highpH: 7.6, color: 'rgba(50, 205, 50, 0.1)', borderColor: 'rgba(50, 205, 50, 0.3)' }, 
+                { id: "timolBlue2", name: "Azul de Timol (2° viraje)", lowpH: 8.0, highpH: 9.6, color: 'rgba(0, 0, 205, 0.1)', borderColor: 'rgba(0, 0, 205, 0.3)' }, 
+                { id: "phenolphthalein", name: "Fenolftaleína", lowpH: 8.2, highpH: 10.0, color: 'rgba(255, 105, 180, 0.1)', borderColor: 'rgba(255, 105, 180, 0.3)' }, 
+                { id: "alizarinYellowR", name: "Amarillo de Alizarina R", lowpH: 10.1, highpH: 12.0, color: 'rgba(255, 215, 0, 0.1)', borderColor: 'rgba(255, 215, 0, 0.3)' } 
             ];
-
-            let annotationPluginAttempted = false;
-            let annotationPluginSuccessfullyRegistered = false;
 
             const acidVolumeEl = document.getElementById('acidVolume');
             const acidConcentrationEl = document.getElementById('acidConcentration');
@@ -202,6 +199,101 @@
             const chartCanvas = document.getElementById('titrationChart');
             let titrationChart = null;
 
+            // Custom Chart.js plugin to draw vertical lines
+            const verticalLinePlugin = {
+                id: 'verticalLinePlugin',
+                afterDraw: (chart, args, options) => {
+                    if (chart.options.plugins && chart.options.plugins.verticalLinePlugin && chart.options.plugins.verticalLinePlugin.lines) {
+                        const lines = chart.options.plugins.verticalLinePlugin.lines;
+                        if (lines.length > 0) {
+                            const { ctx, chartArea: { top, bottom, left, right }, scales: { x, y } } = chart;
+                            lines.forEach(line => {
+                                if (line.value === undefined || line.value === null || isNaN(line.value)) return;
+                                const xValue = x.getPixelForValue(line.value);
+                                if (xValue >= left && xValue <= right) { 
+                                    ctx.save();
+                                    ctx.beginPath();
+                                    ctx.moveTo(xValue, top);
+                                    ctx.lineTo(xValue, bottom);
+                                    ctx.lineWidth = line.lineWidth || 2;
+                                    ctx.strokeStyle = line.color || 'rgba(0,0,0,0.5)';
+                                    ctx.setLineDash(line.dash || [6,6]);
+                                    ctx.stroke();
+                                    if (line.label && line.label.content) {
+                                        ctx.textAlign = line.label.textAlign || 'left';
+                                        ctx.fillStyle = line.label.fontColor || 'rgba(0,0,0,0.9)';
+                                        ctx.font = `${line.label.fontStyle || 'bold'} ${line.label.fontSize || 10}px ${line.label.fontFamily || 'Inter'}`;
+                                        let yPos = top + (line.label.yAdjust || 10);
+                                        let xPosLabel = xValue + (line.label.xAdjust || 5);
+                                        const textWidth = ctx.measureText(line.label.content).width;
+                                        if (xPosLabel + textWidth > right) xPosLabel = xValue - textWidth - 5;
+                                        if (xPosLabel < left) xPosLabel = left + 5;
+                                        ctx.fillText(line.label.content, xPosLabel, yPos);
+                                    }
+                                    ctx.restore();
+                                }
+                            });
+                        }
+                    }
+                }
+            };
+            
+            // Custom Chart.js plugin to draw indicator ranges
+            const indicatorRangePlugin = {
+                id: 'indicatorRangePlugin',
+                afterDatasetsDraw: (chart, args, options) => { // afterDatasetsDraw para dibujar encima de los datos pero debajo de tooltips
+                    if (chart.options.plugins && chart.options.plugins.indicatorRangePlugin && chart.options.plugins.indicatorRangePlugin.indicators) {
+                        const indicators = chart.options.plugins.indicatorRangePlugin.indicators;
+                        if (indicators.length > 0) {
+                            const { ctx, chartArea: { top, bottom, left, right }, scales: { x, y } } = chart;
+                            
+                            indicators.forEach(indicator => {
+                                if (indicator.lowpH === undefined || indicator.highpH === undefined) return;
+
+                                const yMinPixel = y.getPixelForValue(indicator.highpH); // El pH alto está arriba en el gráfico
+                                const yMaxPixel = y.getPixelForValue(indicator.lowpH); // El pH bajo está abajo
+
+                                // Asegurarse que los píxeles estén dentro del área del gráfico
+                                const effectiveYMin = Math.max(top, Math.min(bottom, yMinPixel));
+                                const effectiveYMax = Math.max(top, Math.min(bottom, yMaxPixel));
+                                const height = Math.abs(effectiveYMax - effectiveYMin);
+
+                                if (height > 0) {
+                                    ctx.save();
+                                    ctx.fillStyle = indicator.color || 'rgba(0,0,0,0.1)';
+                                    ctx.fillRect(left, effectiveYMin, right - left, height);
+                                    
+                                    if (indicator.borderColor) {
+                                        ctx.strokeStyle = indicator.borderColor;
+                                        ctx.lineWidth = 1;
+                                        ctx.strokeRect(left, effectiveYMin, right - left, height);
+                                    }
+
+                                    if (indicator.name) {
+                                        ctx.fillStyle = indicator.borderColor || 'rgba(0,0,0,0.7)';
+                                        ctx.font = 'bold 9px Inter';
+                                        ctx.textAlign = 'left';
+                                        // Posicionar la etiqueta dentro de la banda, o cerca si es muy delgada
+                                        let labelYPos = effectiveYMin + height / 2 + 3; // Centrado verticalmente + ajuste
+                                        if (height < 15 && labelYPos + 5 > bottom) labelYPos = effectiveYMin - 2; // Arriba si no cabe
+                                        else if (height < 15 && labelYPos - 10 < top) labelYPos = effectiveYMax + 10; // Abajo si no cabe
+                                        
+                                        labelYPos = Math.max(top + 10, Math.min(bottom - 2, labelYPos));
+
+
+                                        ctx.fillText(indicator.name, left + 5, labelYPos);
+                                    }
+                                    ctx.restore();
+                                }
+                            });
+                        }
+                    }
+                }
+            };
+
+            Chart.register(verticalLinePlugin, indicatorRangePlugin);
+
+
             function populateIndicatorSelection() {
                 indicatorSelectionContainerEl.innerHTML = ''; 
                 INDICATORS.forEach(indicator => {
@@ -212,10 +304,14 @@
                     checkbox.id = `indicator-${indicator.id}`;
                     checkbox.value = indicator.id;
                     checkbox.classList.add('indicator-checkbox');
+                    // Marcar algunos por defecto para demostración
+                    if (["phenolphthalein", "bromothymolBlue", "methylOrange"].includes(indicator.id)) {
+                        checkbox.checked = true;
+                    }
                     
                     const label = document.createElement('label');
                     label.htmlFor = `indicator-${indicator.id}`;
-                    label.textContent = `${indicator.name} (pH ${indicator.lowpH} - ${indicator.highpH})`;
+                    label.textContent = `${indicator.name} (pH ${indicator.lowpH.toFixed(1)} - ${indicator.highpH.toFixed(1)})`;
                     label.classList.add('indicator-checkbox-label');
 
                     div.appendChild(checkbox);
@@ -476,29 +572,6 @@
             }
 
             function plotChart(data, Veq, VhalfEq, acidType, pKa) {
-                if (!annotationPluginAttempted) {
-                    annotationPluginAttempted = true; 
-                    if (typeof Chart !== 'undefined' && typeof ChartAnnotation !== 'undefined') { 
-                        try {
-                            Chart.register(ChartAnnotation); 
-                            annotationPluginSuccessfullyRegistered = true;
-                            console.log("ChartAnnotation plugin registered successfully.");
-                        } catch (e) {
-                            console.error("Error al registrar el plugin ChartAnnotation:", e);
-                            annotationPluginSuccessfullyRegistered = false;
-                        }
-                    } else {
-                        console.warn('Chart.js o el plugin ChartAnnotation no están disponibles. Las anotaciones podrían no funcionar.');
-                        if (typeof Chart === 'undefined') {
-                            console.error('Error Crítico: Chart.js (Chart) no está cargado.');
-                        }
-                        if (typeof ChartAnnotation === 'undefined') { 
-                            console.error('Error Crítico: El plugin ChartAnnotation (variable global "ChartAnnotation") no está cargado o no se encuentra.');
-                        }
-                        annotationPluginSuccessfullyRegistered = false;
-                    }
-                }
-
                 if (titrationChart) {
                     titrationChart.destroy();
                 }
@@ -520,81 +593,48 @@
                     pointBackgroundColor: 'rgb(79, 70, 229)'
                 }];
                 
-                const currentChartAnnotationsArray = []; 
+                const linesForVerticalPlugin = []; 
+                const indicatorsForPlugin = [];
 
                 if (addEquivalencePointEl.checked && Veq !== null && !isNaN(Veq) && labels.length > 0 && Veq >= Math.min(...labels) && Veq <= Math.max(...labels)) {
-                    currentChartAnnotationsArray.push({
-                        type: 'line',
-                        scaleID: 'x', 
+                    linesForVerticalPlugin.push({
                         value: Veq,   
-                        borderColor: 'rgb(220, 38, 38, 0.7)', 
-                        borderWidth: 2,
-                        borderDash: [6, 6],
+                        color: 'rgb(220, 38, 38, 0.9)', 
+                        lineWidth: 2,
+                        dash: [6, 6],
                         label: {
                             content: `Eq. (${Veq.toFixed(1)} mL)`,
-                            enabled: true, 
-                            position: 'top', 
-                            backgroundColor: 'rgba(220, 38, 38, 0.8)',
-                            font: { style: 'bold', size:10, color: 'white' }, 
-                            xAdjust: 0,
-                            yAdjust: -5 
+                            fontColor: 'rgb(220, 38, 38, 0.9)',
+                            yAdjust: 10, // Ajuste para que no se solape tanto
+                            xAdjust: 5
                         }
                     });
                 }
                  if (acidType === 'weak' && addHalfEquivalencePointEl.checked && VhalfEq !== null && !isNaN(VhalfEq) && pKa !== null && !isNaN(pKa) && labels.length > 0 && VhalfEq >= Math.min(...labels) && VhalfEq <= Math.max(...labels)) {
-                    currentChartAnnotationsArray.push({
-                        type: 'line',
-                        scaleID: 'x',
+                    linesForVerticalPlugin.push({
                         value: VhalfEq,
-                        borderColor: 'rgb(22, 163, 74, 0.7)', 
-                        borderWidth: 2,
-                        borderDash: [6, 6],
+                        color: 'rgb(22, 163, 74, 0.9)', 
+                        lineWidth: 2,
+                        dash: [6, 6],
                         label: {
                             content: `Semi-Eq. (pH ≈ ${pKa.toFixed(1)})`,
-                            enabled: true,
-                            position: 'top',
-                            backgroundColor: 'rgba(22, 163, 74, 0.8)',
-                            font: { style: 'bold', size:10, color: 'white' },
-                            xAdjust: 0,
-                            yAdjust: 5,
+                            fontColor: 'rgb(22, 163, 74, 0.9)',
+                            yAdjust: 25, 
+                            xAdjust: 5
                         }
                     });
-                     const pHatHalfEqPoint = validData.find(p => Math.abs(parseFloat(p.Vb) - VhalfEq) < 0.001);
-                     const pHatHalfEq = pHatHalfEqPoint ? parseFloat(pHatHalfEqPoint.pH) : pKa;
-                     
-                     if (pHatHalfEq !== null && !isNaN(pHatHalfEq)){
-                         currentChartAnnotationsArray.push({
-                            type: 'line',
-                            scaleID: 'y', 
-                            value: pHatHalfEq,
-                            borderColor: 'rgb(22, 163, 74, 0.5)',
-                            borderWidth: 1,
-                            borderDash: [3, 3],
-                         });
-                     }
                 }
 
                 const selectedIndicatorCheckboxes = document.querySelectorAll('#indicatorSelectionContainer input[type="checkbox"]:checked');
                 selectedIndicatorCheckboxes.forEach(checkbox => {
                     const indicator = INDICATORS.find(ind => ind.id === checkbox.value);
                     if (indicator) {
-                        currentChartAnnotationsArray.push({
-                            type: 'box',
-                            yScaleID: 'y', 
-                            yMin: indicator.lowpH,
-                            yMax: indicator.highpH,
-                            backgroundColor: indicator.color,
-                            borderColor: indicator.borderColor,
-                            borderWidth: 1,
-                            label: {
-                                content: `${indicator.name}`, 
-                                enabled: true,
-                                position: 'center', 
-                                font: {style:'bold', size:9, color: indicator.borderColor},
-                                xPadding: 6, 
-                                yPadding: 6,
-                                backgroundColor: 'rgba(255,255,255,0.0)', 
-                            }
+                        indicatorsForPlugin.push({
+                            name: indicator.name,
+                            lowpH: indicator.lowpH,
+                            highpH: indicator.highpH,
+                            color: indicator.color,
+                            borderColor: indicator.borderColor
                         });
                     }
                 });
@@ -667,8 +707,13 @@
                         },
                         legend: {
                            display: false 
+                        },
+                        verticalLinePlugin: { 
+                            lines: linesForVerticalPlugin
+                        },
+                        indicatorRangePlugin: {
+                            indicators: indicatorsForPlugin
                         }
-                        // annotation property is set below 
                     },
                     interaction: { 
                         mode: 'index',
@@ -680,16 +725,6 @@
                     }
                 };
                 
-                // Correctly configure annotations for Chart.js v3 with chartjs-plugin-annotation v1.x
-                if (annotationPluginSuccessfullyRegistered && currentChartAnnotationsArray.length > 0) {
-                    chartOptionsConfig.plugins.annotation = { 
-                        annotations: currentChartAnnotationsArray // Pass the array directly
-                    };
-                } else if (!annotationPluginSuccessfullyRegistered && currentChartAnnotationsArray.length > 0) {
-                     console.warn("El plugin de anotaciones no se registró correctamente. Las anotaciones (indicadores, puntos de eq.) no se mostrarán en el gráfico.");
-                }
-
-
                 titrationChart = new Chart(chartCanvas, {
                     type: 'line',
                     data: {
@@ -700,10 +735,13 @@
                 });
             }
             
+            // Inicializar visibilidad de la sección Ka
             if (acidTypeEl.value === 'strong') {
                 halfEquivalencePointSectionEl.classList.add('hidden');
+                 kaSectionEl.classList.add('hidden');
             } else {
                 halfEquivalencePointSectionEl.classList.remove('hidden');
+                kaSectionEl.classList.remove('hidden');
             }
         }); 
     </script>
